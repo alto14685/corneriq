@@ -1,0 +1,18 @@
+[build]
+builder = "nixpacks"
+buildCommand = "pnpm build"
+
+[deploy]
+startCommand = "pnpm start"
+healthcheckPath = "/"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+# Required environment variables (set in Railway dashboard):
+#   VITE_API_URL   — public URL of the deployed api-server service
+#                    e.g. https://corneriq-api-production.up.railway.app
+#
+# Note: VITE_API_URL must be set at BUILD time (not just runtime) because
+# Vite inlines it into the bundle during `pnpm build`.
+# In Railway: set the variable on this service, then trigger a redeploy.

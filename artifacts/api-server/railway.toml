@@ -1,0 +1,18 @@
+[build]
+builder = "nixpacks"
+buildCommand = "pnpm build"
+
+[deploy]
+startCommand = "pnpm start"
+healthcheckPath = "/api/dashboard"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+# Required environment variables (set in Railway dashboard):
+#   DATABASE_URL        — Neon PostgreSQL connection string
+#   PORT                — injected automatically by Railway
+#   NODE_ENV            — set to "production"
+#   ANTHROPIC_API_KEY   — for AI-generated purchase orders (optional)
+#   SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS  — email sending (optional)
+#   STORE_NAME / STORE_ADDRESS / STORE_VAT_NUMBER  — invoice metadata
