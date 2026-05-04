@@ -1,0 +1,1517 @@
+openapi: 3.1.0
+info:
+  title: CornerIQ API
+  version: 1.0.0
+  description: Convenience store management platform API
+
+servers:
+  - url: http://localhost:3001/api
+
+components:
+  schemas:
+    # ─── Enums ──────────────────────────────────────────────────────────────
+    Platform:
+      type: string
+      enum: [uber_eats, deliveroo, just_eat, in_store]
+
+    OrderStatus:
+      type: string
+      enum: [pending, confirmed, preparing, ready, delivered, cancelled, refunded]
+
+    POStatus:
+      type: string
+      enum: [draft, approved, sent, confirmed, partially_received, received, cancelled]
+
+    SupplierInvoiceStatus:
+      type: string
+      enum: [pending_review, approved, synced_to_pos, rejected]
+
+    AuditType:
+      type: string
+      enum: [spot_check, weekly, monthly, full]
+
+    AuditStatus:
+      type: string
+      enum: [scheduled, in_progress, completed, cancelled]
+
+    InvoiceStatus:
+      type: string
+      enum: [draft, sent, viewed, partially_paid, paid, overdue, disputed, void]
+
+    AlertPriority:
+      type: string
+      enum: [low, medium, high, critical]
+
+    AlertCategory:
+      type: string
+      enum: [inventory, finance, audit, purchasing, system]
+
+    # ─── Core entities ───────────────────────────────────────────────────────
+    Product:
+      type: object
+      required: [id, sku, name, category, vatRate, costPrice, sellPrice, reorderPoint, reorderQuantity, expiryTracking, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        sku:
+          type: string
+        barcode:
+          type: string
+          nullable: true
+        name:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+          nullable: true
+        brand:
+          type: string
+          nullable: true
+        unitOfMeasure:
+          type: string
+          nullable: true
+        vatRate:
+          type: string
+        costPrice:
+          type: string
+        sellPrice:
+          type: string
+        reorderPoint:
+          type: integer
+        reorderQuantity:
+          type: integer
+        preferredSupplierId:
+          type: integer
+          nullable: true
+        expiryTracking:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateProductBody:
+      type: object
+      required: [sku, name, category, vatRate, costPrice, sellPrice]
+      properties:
+        sku:
+          type: string
+        barcode:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+        brand:
+          type: string
+        unitOfMeasure:
+          type: string
+        vatRate:
+          type: string
+        costPrice:
+          type: string
+        sellPrice:
+          type: string
+        reorderPoint:
+          type: integer
+        reorderQuantity:
+          type: integer
+        preferredSupplierId:
+          type: integer
+        expiryTracking:
+          type: boolean
+
+    Supplier:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        contactName:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        vatNumber:
+          type: string
+          nullable: true
+        paymentTermsDays:
+          type: integer
+          nullable: true
+        leadTimeDays:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateSupplierBody:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        contactName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        vatNumber:
+          type: string
+        paymentTermsDays:
+          type: integer
+        leadTimeDays:
+          type: integer
+        notes:
+          type: string
+
+    Inventory:
+      type: object
+      required: [id, productId, quantityOnHand, quantityOnOrder, updatedAt]
+      properties:
+        id:
+          type: integer
+        productId:
+          type: integer
+        quantityOnHand:
+          type: string
+        quantityOnOrder:
+          type: string
+        lastCountedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastReceivedAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+
+    InventoryWithProduct:
+      allOf:
+        - $ref: '#/components/schemas/Inventory'
+        - type: object
+          properties:
+            product:
+              $ref: '#/components/schemas/Product'
+            stockStatus:
+              type: string
+              enum: [ok, medium, low, out_of_stock]
+
+    ProductWithInventory:
+      allOf:
+        - $ref: '#/components/schemas/Product'
+        - type: object
+          properties:
+            inventory:
+              $ref: '#/components/schemas/Inventory'
+
+    SalesOrderItem:
+      type: object
+      required: [productId, quantity, unitPrice]
+      properties:
+        productId:
+          type: integer
+        quantity:
+          type: number
+        unitPrice:
+          type: number
+
+    SalesOrder:
+      type: object
+      required: [id, platform, status, orderedAt, grossRevenue, commission, netRevenue, refundAmount, items, createdAt]
+      properties:
+        id:
+          type: integer
+        platformOrderId:
+          type: string
+          nullable: true
+        platform:
+          $ref: '#/components/schemas/Platform'
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        orderedAt:
+          type: string
+          format: date-time
+        grossRevenue:
+          type: string
+        commission:
+          type: string
+        netRevenue:
+          type: string
+        refundAmount:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesOrderItem'
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateSaleBody:
+      type: object
+      required: [platform, orderedAt, grossRevenue, items]
+      properties:
+        platform:
+          $ref: '#/components/schemas/Platform'
+        platformOrderId:
+          type: string
+        orderedAt:
+          type: string
+          format: date-time
+        grossRevenue:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesOrderItem'
+
+    SalesSummary:
+      type: object
+      properties:
+        platform:
+          $ref: '#/components/schemas/Platform'
+        grossRevenue:
+          type: number
+        netRevenue:
+          type: number
+        commission:
+          type: number
+        orderCount:
+          type: integer
+
+    TopProduct:
+      type: object
+      properties:
+        productId:
+          type: integer
+        productName:
+          type: string
+        sku:
+          type: string
+        totalQuantity:
+          type: number
+        totalRevenue:
+          type: number
+
+    POItem:
+      type: object
+      required: [productId, sku, productName, quantity, unitCost, lineTotal]
+      properties:
+        productId:
+          type: integer
+        sku:
+          type: string
+        productName:
+          type: string
+        quantity:
+          type: number
+        unitCost:
+          type: number
+        lineTotal:
+          type: number
+
+    PurchaseOrder:
+      type: object
+      required: [id, poNumber, supplierId, status, items, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        poNumber:
+          type: string
+        supplierId:
+          type: integer
+        status:
+          $ref: '#/components/schemas/POStatus'
+        totalValue:
+          type: string
+          nullable: true
+        expectedDeliveryDate:
+          type: string
+          nullable: true
+        receivedDate:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        aiGenerated:
+          type: boolean
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/POItem'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreatePurchaseOrderBody:
+      type: object
+      required: [supplierId, items]
+      properties:
+        supplierId:
+          type: integer
+        expectedDeliveryDate:
+          type: string
+        notes:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/POItem'
+
+    SupplierInvoiceItem:
+      type: object
+      properties:
+        sku:
+          type: string
+        productName:
+          type: string
+        invoicedQuantity:
+          type: number
+        invoicedUnitPrice:
+          type: number
+        vatRate:
+          type: number
+        lineTotal:
+          type: number
+        confidenceScore:
+          type: number
+
+    SupplierInvoice:
+      type: object
+      required: [id, status, items, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        invoiceNumber:
+          type: string
+          nullable: true
+        supplierId:
+          type: integer
+          nullable: true
+        invoiceDate:
+          type: string
+          nullable: true
+        paymentTermsDays:
+          type: integer
+          nullable: true
+        subtotal:
+          type: string
+          nullable: true
+        vatTotal:
+          type: string
+          nullable: true
+        grandTotal:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/SupplierInvoiceStatus'
+        overallConfidenceScore:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupplierInvoiceItem'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateSupplierInvoiceBody:
+      type: object
+      properties:
+        invoiceNumber:
+          type: string
+        supplierId:
+          type: integer
+        invoiceDate:
+          type: string
+        paymentTermsDays:
+          type: integer
+        subtotal:
+          type: string
+        vatTotal:
+          type: string
+        grandTotal:
+          type: string
+        overallConfidenceScore:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupplierInvoiceItem'
+
+    AuditItem:
+      type: object
+      required: [id, auditId, productId, productName, sku, expectedQuantity, status]
+      properties:
+        id:
+          type: integer
+        auditId:
+          type: integer
+        productId:
+          type: integer
+        productName:
+          type: string
+        sku:
+          type: string
+        expectedQuantity:
+          type: integer
+        actualQuantity:
+          type: integer
+          nullable: true
+        variance:
+          type: integer
+          nullable: true
+        variancePercent:
+          type: string
+          nullable: true
+        status:
+          type: string
+        discrepancyCategory:
+          type: string
+          nullable: true
+
+    Audit:
+      type: object
+      required: [id, auditType, status, createdAt]
+      properties:
+        id:
+          type: integer
+        auditType:
+          $ref: '#/components/schemas/AuditType'
+        status:
+          $ref: '#/components/schemas/AuditStatus'
+        scheduledFor:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        totalProductsAudited:
+          type: integer
+          nullable: true
+        totalVarianceValue:
+          type: string
+          nullable: true
+        shrinkageRate:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    AuditWithItems:
+      allOf:
+        - $ref: '#/components/schemas/Audit'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuditItem'
+
+    CreateAuditBody:
+      type: object
+      required: [auditType]
+      properties:
+        auditType:
+          $ref: '#/components/schemas/AuditType'
+        scheduledFor:
+          type: string
+          format: date-time
+        notes:
+          type: string
+
+    InvoiceLineItem:
+      type: object
+      required: [description, quantity, unitPrice, vatRate, lineTotal]
+      properties:
+        description:
+          type: string
+        quantity:
+          type: number
+        unitPrice:
+          type: number
+        vatRate:
+          type: number
+        lineTotal:
+          type: number
+
+    InvoicePayment:
+      type: object
+      required: [amount, method, paidAt]
+      properties:
+        amount:
+          type: number
+        method:
+          type: string
+        reference:
+          type: string
+        paidAt:
+          type: string
+
+    Invoice:
+      type: object
+      required: [id, invoiceNumber, customerName, status, invoiceDate, dueDate, subtotal, vatTotal, grandTotal, amountPaid, amountDue, items, payments, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        invoiceNumber:
+          type: string
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/InvoiceStatus'
+        invoiceDate:
+          type: string
+        dueDate:
+          type: string
+        subtotal:
+          type: string
+        vatTotal:
+          type: string
+        grandTotal:
+          type: string
+        amountPaid:
+          type: string
+        amountDue:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceLineItem'
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoicePayment'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateInvoiceBody:
+      type: object
+      required: [customerName, invoiceDate, dueDate, items]
+      properties:
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        invoiceDate:
+          type: string
+        dueDate:
+          type: string
+        notes:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceLineItem'
+
+    Alert:
+      type: object
+      required: [id, title, message, priority, category, isRead, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        message:
+          type: string
+        priority:
+          $ref: '#/components/schemas/AlertPriority'
+        category:
+          $ref: '#/components/schemas/AlertCategory'
+        isRead:
+          type: boolean
+        relatedEntityType:
+          type: string
+          nullable: true
+        relatedEntityId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    DashboardStats:
+      type: object
+      required: [todayRevenue, todayOrders, lowStockCount, pendingPOCount, unreadAlertCount, platformBreakdown, revenueChart]
+      properties:
+        todayRevenue:
+          type: number
+        todayOrders:
+          type: integer
+        revenueChange7d:
+          type: number
+        lowStockCount:
+          type: integer
+        pendingPOCount:
+          type: integer
+        unreadAlertCount:
+          type: integer
+        platformBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              platform:
+                $ref: '#/components/schemas/Platform'
+              grossRevenue:
+                type: number
+              netRevenue:
+                type: number
+              commission:
+                type: number
+              orderCount:
+                type: integer
+        revenueChart:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+              uber_eats:
+                type: number
+              deliveroo:
+                type: number
+              just_eat:
+                type: number
+              in_store:
+                type: number
+              total:
+                type: number
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+# ─── Paths ──────────────────────────────────────────────────────────────────
+paths:
+  /products:
+    get:
+      tags: [products]
+      operationId: getProducts
+      summary: List products
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: lowStock
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Products list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+    post:
+      tags: [products]
+      operationId: createProduct
+      summary: Create product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductBody'
+      responses:
+        '201':
+          description: Created product
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Product'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /products/{id}:
+    get:
+      tags: [products]
+      operationId: getProduct
+      summary: Get product with inventory
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product with inventory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ProductWithInventory'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      tags: [products]
+      operationId: updateProduct
+      summary: Update product
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductBody'
+      responses:
+        '200':
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Product'
+
+  /inventory:
+    get:
+      tags: [inventory]
+      operationId: getInventory
+      summary: Inventory status list
+      parameters:
+        - in: query
+          name: stockStatus
+          schema:
+            type: string
+            enum: [ok, medium, low, out_of_stock]
+      responses:
+        '200':
+          description: Inventory list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventoryWithProduct'
+
+  /inventory/{productId}:
+    patch:
+      tags: [inventory]
+      operationId: adjustStock
+      summary: Manually adjust stock
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [adjustment, reason]
+              properties:
+                adjustment:
+                  type: number
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Updated inventory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Inventory'
+
+  /sales:
+    get:
+      tags: [sales]
+      operationId: getSales
+      summary: List sales orders
+      parameters:
+        - in: query
+          name: platform
+          schema:
+            $ref: '#/components/schemas/Platform'
+        - in: query
+          name: days
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sales orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SalesOrder'
+    post:
+      tags: [sales]
+      operationId: createSale
+      summary: Create in-store sale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSaleBody'
+      responses:
+        '201':
+          description: Created sale
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SalesOrder'
+
+  /sales/summary:
+    get:
+      tags: [sales]
+      operationId: getSalesSummary
+      summary: Revenue by platform
+      parameters:
+        - in: query
+          name: days
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sales summary by platform
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SalesSummary'
+
+  /sales/top-products:
+    get:
+      tags: [sales]
+      operationId: getTopProducts
+      summary: Top selling products
+      parameters:
+        - in: query
+          name: days
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Top products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TopProduct'
+
+  /suppliers:
+    get:
+      tags: [suppliers]
+      operationId: getSuppliers
+      summary: List suppliers
+      responses:
+        '200':
+          description: Suppliers list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Supplier'
+    post:
+      tags: [suppliers]
+      operationId: createSupplier
+      summary: Create supplier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSupplierBody'
+      responses:
+        '201':
+          description: Created supplier
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Supplier'
+
+  /suppliers/{id}:
+    patch:
+      tags: [suppliers]
+      operationId: updateSupplier
+      summary: Update supplier
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSupplierBody'
+      responses:
+        '200':
+          description: Updated supplier
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Supplier'
+
+  /purchase-orders:
+    get:
+      tags: [purchase-orders]
+      operationId: getPurchaseOrders
+      summary: List purchase orders
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/POStatus'
+      responses:
+        '200':
+          description: Purchase orders list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PurchaseOrder'
+    post:
+      tags: [purchase-orders]
+      operationId: createPurchaseOrder
+      summary: Create purchase order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePurchaseOrderBody'
+      responses:
+        '201':
+          description: Created purchase order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PurchaseOrder'
+
+  /purchase-orders/{id}/status:
+    patch:
+      tags: [purchase-orders]
+      operationId: updatePurchaseOrderStatus
+      summary: Update purchase order status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  $ref: '#/components/schemas/POStatus'
+      responses:
+        '200':
+          description: Updated purchase order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PurchaseOrder'
+
+  /supplier-invoices:
+    get:
+      tags: [supplier-invoices]
+      operationId: getSupplierInvoices
+      summary: List supplier invoices
+      responses:
+        '200':
+          description: Supplier invoices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SupplierInvoice'
+    post:
+      tags: [supplier-invoices]
+      operationId: createSupplierInvoice
+      summary: Upload or create supplier invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSupplierInvoiceBody'
+      responses:
+        '201':
+          description: Created supplier invoice
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SupplierInvoice'
+
+  /supplier-invoices/{id}/approve:
+    post:
+      tags: [supplier-invoices]
+      operationId: approveSupplierInvoice
+      summary: Approve invoice and sync to inventory
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Approved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /audits:
+    get:
+      tags: [audits]
+      operationId: getAudits
+      summary: List audits
+      responses:
+        '200':
+          description: Audits list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Audit'
+    post:
+      tags: [audits]
+      operationId: createAudit
+      summary: Create audit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAuditBody'
+      responses:
+        '201':
+          description: Created audit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AuditWithItems'
+
+  /audits/{id}:
+    get:
+      tags: [audits]
+      operationId: getAudit
+      summary: Get audit with items
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Audit with items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AuditWithItems'
+
+  /audits/{id}/items/{itemId}:
+    patch:
+      tags: [audits]
+      operationId: submitAuditCount
+      summary: Submit count for audit item
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [actualQuantity]
+              properties:
+                actualQuantity:
+                  type: integer
+                discrepancyCategory:
+                  type: string
+      responses:
+        '200':
+          description: Updated audit item
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AuditItem'
+
+  /audits/{id}/complete:
+    post:
+      tags: [audits]
+      operationId: completeAudit
+      summary: Complete audit and recalculate variance
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Completed audit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Audit'
+
+  /invoices:
+    get:
+      tags: [invoices]
+      operationId: getInvoices
+      summary: List outbound invoices
+      responses:
+        '200':
+          description: Invoices list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Invoice'
+    post:
+      tags: [invoices]
+      operationId: createInvoice
+      summary: Create invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvoiceBody'
+      responses:
+        '201':
+          description: Created invoice
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Invoice'
+
+  /invoices/{id}:
+    patch:
+      tags: [invoices]
+      operationId: updateInvoice
+      summary: Update invoice
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvoiceBody'
+      responses:
+        '200':
+          description: Updated invoice
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Invoice'
+
+  /invoices/{id}/payment:
+    post:
+      tags: [invoices]
+      operationId: recordPayment
+      summary: Record invoice payment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, method]
+              properties:
+                amount:
+                  type: number
+                method:
+                  type: string
+                reference:
+                  type: string
+      responses:
+        '200':
+          description: Payment recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Invoice'
+
+  /alerts:
+    get:
+      tags: [alerts]
+      operationId: getAlerts
+      summary: List alerts
+      parameters:
+        - in: query
+          name: unreadOnly
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Alerts list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alert'
+
+  /alerts/{id}/read:
+    patch:
+      tags: [alerts]
+      operationId: markAlertRead
+      summary: Mark alert as read
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Alert marked read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Alert'
+
+  /alerts/read-all:
+    patch:
+      tags: [alerts]
+      operationId: markAllAlertsRead
+      summary: Mark all alerts as read
+      responses:
+        '200':
+          description: All marked read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      updated:
+                        type: integer
+
+  /dashboard:
+    get:
+      tags: [dashboard]
+      operationId: getDashboard
+      summary: Aggregated dashboard stats
+      responses:
+        '200':
+          description: Dashboard payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/DashboardStats'

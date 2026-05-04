@@ -1,0 +1,17 @@
+{
+  "name": "@workspace/scripts",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "seed": "dotenv -e ../.env -- tsx seed.ts"
+  },
+  "dependencies": {
+    "@workspace/db": "workspace:*",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^8.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.3"
+  }
+}

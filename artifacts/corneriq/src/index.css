@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  --color-uber-eats: #06C167;
+  --color-deliveroo: #00CCBC;
+  --color-just-eat: #FF8000;
+  --color-in-store: #3B82F6;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+}

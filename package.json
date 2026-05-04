@@ -1,0 +1,15 @@
+{
+  "name": "corneriq",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @workspace/api-server --filter @workspace/corneriq run --parallel dev",
+    "typecheck": "pnpm -r --parallel --if-present run typecheck",
+    "build": "pnpm -r --parallel --if-present run build"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
+}

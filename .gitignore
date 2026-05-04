@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment files — never commit secrets
+.env
+.env.local
+.env.*.local
+artifacts/api-server/.env
+artifacts/corneriq/.env
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Drizzle generated migrations (keep drizzle/ folder but not journal lock)
+drizzle/*.sql
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Vite cache
+.vite/
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
