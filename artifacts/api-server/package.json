@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "dotenv -e .env -- tsx watch src/index.ts",
-    "build": "npx tsc --skipLibCheck",
+    "build": "tsc --skipLibCheck",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit"
   },

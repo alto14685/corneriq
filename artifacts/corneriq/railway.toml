@@ -1,9 +1,9 @@
 [build]
 builder = "nixpacks"
-buildCommand = "pnpm build"
+buildCommand = "pnpm install && pnpm --filter @workspace/db build && pnpm --filter @workspace/api-client-react build && pnpm --filter @workspace/corneriq build"
 
 [deploy]
-startCommand = "pnpm start"
+startCommand = "npx serve dist -p $PORT"
 healthcheckPath = "/"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
@@ -14,5 +14,5 @@ restartPolicyMaxRetries = 3
 #                    e.g. https://corneriq-api-production.up.railway.app
 #
 # Note: VITE_API_URL must be set at BUILD time (not just runtime) because
-# Vite inlines it into the bundle during `pnpm build`.
+# Vite inlines it into the bundle during the build step.
 # In Railway: set the variable on this service, then trigger a redeploy.

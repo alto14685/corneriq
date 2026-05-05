@@ -1,9 +1,9 @@
 [build]
 builder = "nixpacks"
-buildCommand = "pnpm build"
+buildCommand = "pnpm install && pnpm --filter @workspace/db build && pnpm --filter @workspace/api-server build"
 
 [deploy]
-startCommand = "pnpm start"
+startCommand = "node dist/index.js"
 healthcheckPath = "/api/dashboard"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
