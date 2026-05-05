@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "dotenv -e .env -- tsx watch src/index.ts",
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --packages=external",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:express --external:cors --external:pg --external:drizzle-orm --external:drizzle-zod --external:pino --external:pino-http --external:dotenv --external:zod",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit"
   },

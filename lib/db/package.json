@@ -2,8 +2,7 @@
   "name": "@workspace/db",
   "version": "0.0.1",
   "private": true,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
   "scripts": {
     "build": "echo ok",
     "push": "dotenv -e ../../.env -- drizzle-kit push",
