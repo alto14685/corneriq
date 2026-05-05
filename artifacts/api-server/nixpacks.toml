@@ -1,2 +1,11 @@
+[variables]
+NODE_VERSION = "20"
+
+[phases.install]
+cmds = ["pnpm install --frozen-lockfile"]
+
 [phases.build]
-cmds = ["pnpm --filter @workspace/db build 2>/dev/null || true", "pnpm --filter @workspace/api-server run build"]
+cmds = ["pnpm --filter @workspace/db build", "pnpm --filter @workspace/api-server build"]
+
+[start]
+cmd = "node dist/index.js"

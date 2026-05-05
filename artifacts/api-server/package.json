@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "dotenv -e .env -- tsx watch src/index.ts",
-    "build": "tsc --skipLibCheck",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --packages=external",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit"
   },
@@ -16,6 +16,7 @@
     "@workspace/db": "workspace:*",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "esbuild": "^0.25.0",
     "express": "^5.0.1",
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",
