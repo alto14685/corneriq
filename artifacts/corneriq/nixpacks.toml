@@ -1,0 +1,10 @@
+[variables]
+# Prevent pnpm from skipping devDependencies (tsc, vite, tailwindcss, etc.)
+# during install. Same reason as api-server — see that nixpacks.toml.
+NODE_ENV = "development"
+
+[phases.install]
+cmds = ["pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["pnpm build"]

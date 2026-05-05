@@ -1,0 +1,12 @@
+[variables]
+# Prevent pnpm from skipping devDependencies (tsc, tsx, etc.) during install.
+# NODE_ENV=production (injected by Railway) causes pnpm to treat the install
+# as --prod. Setting it to development here only affects the build container;
+# the running container receives production env vars from Railway's dashboard.
+NODE_ENV = "development"
+
+[phases.install]
+cmds = ["pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["pnpm build"]
