@@ -2,6 +2,9 @@
 builder = "nixpacks"
 buildCommand = "pnpm install && pnpm --filter @workspace/db build && pnpm --filter @workspace/api-server build"
 
+[variables]
+NIXPACKS_NODE_VERSION = "20"
+
 [deploy]
 startCommand = "node dist/index.js"
 healthcheckPath = "/api/dashboard"

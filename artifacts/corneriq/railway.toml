@@ -2,6 +2,9 @@
 builder = "nixpacks"
 buildCommand = "pnpm install && pnpm --filter @workspace/db build && pnpm --filter @workspace/api-client-react build && pnpm --filter @workspace/corneriq build"
 
+[variables]
+NIXPACKS_NODE_VERSION = "20"
+
 [deploy]
 startCommand = "npx serve dist -p $PORT"
 healthcheckPath = "/"
