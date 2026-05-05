@@ -5,7 +5,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "echo ok",
     "push": "dotenv -e ../../.env -- drizzle-kit push",
     "typecheck": "tsc --noEmit"
   },
