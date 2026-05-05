@@ -4,6 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
+    "skipLibCheck": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "outDir": "./dist",
     "types": ["vite/client"]
